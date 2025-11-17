@@ -1,35 +1,33 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import kociemba
+import os   # <-- REQUIRED
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route("/")
-def health():
-    return jsonify({"status": "ok", "message": "Cube solver API running"}), 200
+@app.route('/')
+def home():
+    return {"status": "Cube Solver API Running"}
 
-@app.route("/solve", methods=["POST"])
+@app.route('/solve', methods=['POST'])
 def solve():
-    data = request.get_json() or {}
-    cube = data.get("cube")
+    data = request.get_json()
 
-    if not cube:
-        return jsonify({"error": "Request JSON must include 'cube' field"}), 400
+    if 'cube' not in data:
+        return jsonify({"error": "cube field missing"}), 400
+
+    cube_string = data['cube']
 
     try:
-        # cube is the 54-character facelet string like "UUUUUU...BBBBBBB"
-        solution = kociemba.solve(cube)
-        return jsonify({
-            "solution": solution,
-            "status": "ok",
-        }), 200
+        solution = kociemba.solve(cube_string)
+        return jsonify({"solution": solution, "status": "ok"})
     except Exception as e:
-        # Any error in the cube string or solver
-        return jsonify({
-            "status": "error",
-            "error": str(e),
-        }), 400
+        return jsonify({"error": str(e), "status": "error"}), 400
 
 
-if __name__ == "__main__":
-    # local testing (optional)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# 🔥 REQUIRED FOR RENDER
+if __name__ == '__main__':
+    print("Starting Flask server...")
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
